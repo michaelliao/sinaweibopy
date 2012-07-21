@@ -1,6 +1,8 @@
-# 欢迎使用Sina Weibo Python客户端！
+欢迎使用Sina Weibo Python客户端！
 
-sinaweibopy是Python专用的支持新浪微博API的OAuth 1、OAuth 2客户端，无依赖，100%纯Py，单个文件，代码简洁，运行可靠，也是新浪微博官方推荐的Python SDK：[http://open.weibo.com/wiki/SDK#Python_SDK](http://open.weibo.com/wiki/SDK#Python_SDK)。
+sinaweibopy是Python专用的支持新浪微博API的OAuth 1、OAuth 2客户端，无依赖，100%纯Py，单个文件，代码简洁，运行可靠，也是新浪微博官方推荐的Python SDK：
 
-# 详细文档请移步：
+http://open.weibo.com/wiki/SDK#Python_SDK
+
+详细文档请移步：
 http://michaelliao.github.com/sinaweibopy/
