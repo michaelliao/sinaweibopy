@@ -49,6 +49,12 @@ class JsonObject(dict):
     def __setattr__(self, attr, value):
         self[attr] = value
 
+    def __getstate__(self):
+        return self.copy()
+
+    def __setstate__(self, state):
+        self.update(state)
+
 def _encode_params(**kw):
     '''
     Encode parameters.
