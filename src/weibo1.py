@@ -217,7 +217,7 @@ _HTTP_GET = 0
 _HTTP_POST = 1
 _HTTP_UPLOAD = 2
 
-def _http_call(url, method, authorization=None, return_json=True, **kw):
+def _http_call(the_url, method, authorization=None, return_json=True, **kw):
     '''
     send an http request and return headers and body if no error.
     '''
@@ -227,7 +227,7 @@ def _http_call(url, method, authorization=None, return_json=True, **kw):
         params, boundary = _encode_multipart(**kw)
     else:
         params = _encode_params(**kw)
-    http_url = '%s?%s' % (url, params) if method==_HTTP_GET and params else url
+    http_url = '%s?%s' % (the_url, params) if method==_HTTP_GET and params else the_url
     http_body = None if method==_HTTP_GET else params
     req = urllib2.Request(http_url, data=http_body)
     if authorization:

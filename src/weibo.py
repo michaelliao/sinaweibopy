@@ -106,7 +106,7 @@ def _http_upload(url, authorization=None, **kw):
     logging.info('MULTIPART POST %s' % url)
     return _http_call(url, _HTTP_UPLOAD, authorization, **kw)
 
-def _http_call(url, method, authorization, **kw):
+def _http_call(the_url, method, authorization, **kw):
     '''
     send an http request and expect to return a json object if no error.
     '''
@@ -116,7 +116,7 @@ def _http_call(url, method, authorization, **kw):
         params, boundary = _encode_multipart(**kw)
     else:
         params = _encode_params(**kw)
-    http_url = '%s?%s' % (url, params) if method==_HTTP_GET else url
+    http_url = '%s?%s' % (the_url, params) if method==_HTTP_GET else the_url
     http_body = None if method==_HTTP_GET else params
     req = urllib2.Request(http_url, data=http_body)
     if authorization:
