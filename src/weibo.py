@@ -195,8 +195,14 @@ class APIClient(object):
                 client_secret = self.client_secret, \
                 redirect_uri = redirect, \
                 code = code, grant_type = 'authorization_code')
-        r.expires_in += int(time.time())
-        return r
+        current = int(time.time())
+        expires = r.expires_in + current
+        remind_in = r.get('remind_in', None)
+        if remind_in:
+            rtime = remind_in + current
+            if rtime < expires:
+                expires = rtime
+        return JsonObject(access_token=r.access_token, expires_in=expires)
 
     def is_expires(self):
         return not self.access_token or time.time() > self.expires
