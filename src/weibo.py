@@ -185,7 +185,7 @@ class APIClient(object):
 
     def request_access_token(self, code, redirect_uri=None):
         '''
-        return access token as object: {"access_token":"your-access-token","expires_in":12345678}, expires_in is standard unix-epoch-time
+        return access token as object: {"access_token":"your-access-token","expires_in":12345678,"uid":1234}, expires_in is standard unix-epoch-time
         '''
         redirect = redirect_uri if redirect_uri else self.redirect_uri
         if not redirect:
@@ -202,7 +202,11 @@ class APIClient(object):
             rtime = remind_in + current
             if rtime < expires:
                 expires = rtime
-        return JsonObject(access_token=r.access_token, expires_in=expires)
+        jo = JsonObject(access_token=r.access_token, expires_in=expires)
+        uid = r.get('uid', None)
+        if uid:
+            jo.uid = uid
+        return jo
 
     def is_expires(self):
         return not self.access_token or time.time() > self.expires
