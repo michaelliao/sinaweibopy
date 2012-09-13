@@ -199,7 +199,7 @@ class APIClient(object):
         expires = r.expires_in + current
         remind_in = r.get('remind_in', None)
         if remind_in:
-            rtime = remind_in + current
+            rtime = int(remind_in) + current
             if rtime < expires:
                 expires = rtime
         jo = JsonObject(access_token=r.access_token, expires_in=expires)
