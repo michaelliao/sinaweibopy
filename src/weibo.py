@@ -133,7 +133,7 @@ def _http_call(the_url, method, authorization, **kw):
     body = resp.read()
     r = json.loads(body, object_hook=_obj_hook)
     if hasattr(r, 'error_code'):
-        raise APIError(r.error_code, getattr(r, 'error', ''), getattr(r, 'request', ''))
+        raise APIError(r.error_code, r.get('error', ''), r.get('request', ''))
     return r
 
 class HttpObject(object):
