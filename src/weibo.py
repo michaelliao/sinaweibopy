@@ -129,12 +129,21 @@ def _http_call(the_url, method, authorization, **kw):
         req.add_header('Authorization', 'OAuth2 %s' % authorization)
     if boundary:
         req.add_header('Content-Type', 'multipart/form-data; boundary=%s' % boundary)
-    resp = urllib2.urlopen(req)
-    body = resp.read()
-    r = json.loads(body, object_hook=_obj_hook)
-    if hasattr(r, 'error_code'):
-        raise APIError(r.error_code, r.get('error', ''), r.get('request', ''))
-    return r
+    try:
+        resp = urllib2.urlopen(req)
+        body = resp.read()
+        r = json.loads(body, object_hook=_obj_hook)
+        if hasattr(r, 'error_code'):
+            raise APIError(r.error_code, r.get('error', ''), r.get('request', ''))
+        return r
+    except urllib2.HttpError, e:
+        r = json.loads(e.read(), object_hook=_obj_hook)
+        if hasattr(r, 'error_code'):
+            raise APIError(r.error_code, r.get('error', ''), r.get('request', ''))
+        if hasattr(r, 'rst'):
+            r = r.rst
+            raise APIError(r.error_code, r.get('error', ''), r.get('request', ''))
+        raise
 
 class HttpObject(object):
 
