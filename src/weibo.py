@@ -136,7 +136,7 @@ def _http_call(the_url, method, authorization, **kw):
         if hasattr(r, 'error_code'):
             raise APIError(r.error_code, r.get('error', ''), r.get('request', ''))
         return r
-    except urllib2.HttpError, e:
+    except urllib2.HTTPError, e:
         r = json.loads(e.read(), object_hook=_obj_hook)
         if hasattr(r, 'error_code'):
             raise APIError(r.error_code, r.get('error', ''), r.get('request', ''))
