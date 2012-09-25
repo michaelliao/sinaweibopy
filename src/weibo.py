@@ -124,6 +124,9 @@ def _http_call(the_url, method, authorization, **kw):
         params, boundary = _encode_multipart(**kw)
     else:
         params = _encode_params(**kw)
+        if '/remind/' in the_url:
+            # fix sina remind api:
+            the_url = the_url.replace('https://api.', 'https://rm.api.')
     http_url = '%s?%s' % (the_url, params) if method==_HTTP_GET else the_url
     http_body = None if method==_HTTP_GET else params
     req = urllib2.Request(http_url, data=http_body)
