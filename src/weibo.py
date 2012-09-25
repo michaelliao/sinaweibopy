@@ -119,6 +119,8 @@ def _http_call(the_url, method, authorization, **kw):
     params = None
     boundary = None
     if method==_HTTP_UPLOAD:
+        # fix sina upload url:
+        the_url = the_url.replace('https://api.', 'https://upload.api.')
         params, boundary = _encode_multipart(**kw)
     else:
         params = _encode_params(**kw)
