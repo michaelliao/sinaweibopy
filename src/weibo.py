@@ -140,9 +140,6 @@ def _http_call(the_url, method, authorization, **kw):
         r = json.loads(e.read(), object_hook=_obj_hook)
         if hasattr(r, 'error_code'):
             raise APIError(r.error_code, r.get('error', ''), r.get('request', ''))
-        if hasattr(r, 'rst'):
-            r = r.rst
-            raise APIError(r.error_code, r.get('error', ''), r.get('request', ''))
         raise
 
 class HttpObject(object):
