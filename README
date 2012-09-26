@@ -1,8 +1,12 @@
-欢迎使用Sina Weibo Python客户端！
+This software is a 100% Python interface to Sina weibo OAuth2 API. 
+It is the client side software which allows access Sina weibo API. 
+Visit http://open.weibo.com/ for more information.
 
-sinaweibopy是Python专用的支持新浪微博API的OAuth 1、OAuth 2客户端，无依赖，100%纯Py，单个文件，代码简洁，运行可靠，也是新浪微博官方推荐的Python SDK：
+This package was originally written by Michael Liao. You can find 
+docs and source code at:
 
-http://open.weibo.com/wiki/SDK#Python_SDK
-
-详细文档请移步：
 http://michaelliao.github.com/sinaweibopy/
+
+Please report bugs or any suggestions at:
+
+https://github.com/michaelliao/sinaweibopy
