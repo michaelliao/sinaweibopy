@@ -3,7 +3,7 @@ import sys
 
 kw = dict(
     name = 'sinaweibopy',
-    version = '1.0.5',
+    version = '1.0.6',
     description = 'Sina Weibo OAuth2 API Python SDK',
     long_description = open('README', 'r').read(),
     author = 'Michael Liao',
