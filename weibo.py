@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-__version__ = '1.0.5'
+__version__ = '1.0.7'
 __author__ = 'Liao Xuefeng (askxuefeng@gmail.com)'
 
 '''
@@ -173,7 +173,7 @@ class APIClient(object):
         self.access_token = str(access_token)
         self.expires = float(expires_in)
 
-    def get_authorize_url(self, redirect_uri=None, display='default'):
+    def get_authorize_url(self, redirect_uri=None, **kw):
         '''
         return the authroize url that should be redirect.
         '''
@@ -183,8 +183,7 @@ class APIClient(object):
         return '%s%s?%s' % (self.auth_url, 'authorize', \
                 _encode_params(client_id = self.client_id, \
                         response_type = 'code', \
-                        display = display, \
-                        redirect_uri = redirect))
+                        redirect_uri = redirect, **kw))
 
     def request_access_token(self, code, redirect_uri=None):
         '''

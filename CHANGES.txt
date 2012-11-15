@@ -6,3 +6,6 @@ Version 1.0.6 released 2012-11-10
 
 * Improve API calling.
 
+Version 1.0.7 released 2012-??-??
+
+* Add more params in get_authorize_url.
