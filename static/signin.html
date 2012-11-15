@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>mini weibo</title>
+    <!--[if lt IE 9]>
+        <script src="/static/js/html5.js"></script>
+    <![endif]-->
+    <link rel="stylesheet" href="/static/css/bootstrap.css" />
+    <link rel="stylesheet" href="/static/css/custom.css" />
+
+    <script type="text/javascript" src="/static/js/jquery-1.7.2.min.js"></script>
+    <script type="text/javascript" src="/static/js/jquery.postjson.js"></script>
+    <script type="text/javascript" src="/static/js/bootstrap.min.js"></script>
+    <script type="text/javascript">
+
+    </script>
+</head>
+<body>
+    <div class="navbar navbar-fixed-top">
+        <div class="navbar-inner">
+            <div class="container" style="width:940px">
+                <div class="nav-collapse">
+                    <ul class="nav">
+                        <li><a href="/">我的微博</a></li>
+                        <li><a href="http://michaelliao.github.com/sinaweibopy/" target="_blank">源码</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div><!-- /navbar -->
+
+    <div class="container">
+        <div class="row">
+            <div class="span3">
+                <div style="height:60px"></div>
+            </div>
+        </div>
+
+        <div class="row" style="background-color:#fff">
+            <div class="span3">
+                <div class="rightborder" style="height: 20px"></div>
+            </div>
+        </div>
+
+        <div class="row" style="background-color:#fff">
+            <div class="span3">
+                <div class="rightborder recommend" style="padding-top:20px">
+                    <div class="h4">什么是mini weibo？</div>
+                    <div style="padding: 10px 0px">
+                        <div>一个调用新浪微博API</div>
+                        <div>使用Python开发的</div>
+                        <div>运行在<a href="http://sae.sina.com.cn" target="_blank">SAE</a>上的</div>
+                        <div>迷你微博</div>
+                        <div>开源！</div>
+                    </div>
+                    <div class="h4">如何安装mini weibo？</div>
+                    <div style="padding: 10px 0px">
+                        <div>从GitHub下载源码</div>
+                        <div>部署到SAE</div>
+                        <div>或者</div>
+                        <div>任何支持WSGI的服务器</div>
+                        <div>配好App ID/App Secret</div>
+                        <div>就可以</div>
+                        <div>开始使用！</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="span9" style="padding-top:20px">
+                <div class="row">
+                    <div class="span9">
+                        <div style="padding-left:30px">
+                            <div class="h4">请使用新浪微博帐号登录：</div>
+                            <div style="padding:10px 0px"><a href="/signin"><img src="/static/i/signin.png" style="width: 239px;height: 48px" /></a></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div id="weibo-list" class="span9">
+                        <div class="h4" style="padding: 10px 30px;">源码下载：</div>
+                        <div style="padding: 10px 30px">
+                            <p>可以从GitHub下载<a href="https://github.com/michaelliao/sinaweibopy" target="_blank">Python SDK和mini weibo网站源码</a></p>
+                        </div>
+                        <div class="h4" style="padding: 10px 30px;">关注作者：</div>
+                        <div style="padding: 10px 30px">
+                            <p><a href="http://weibo.com/liaoxuefeng" target="_blank">@廖雪峰</a></p>
+                            <p><iframe width="136" height="24" frameborder="0" allowtransparency="true" marginwidth="0" marginheight="0" scrolling="no" border="0" src="http://widget.weibo.com/relationship/followbutton.php?language=zh_cn&width=136&height=24&uid=1658384301&style=2&btn=red&dpc=1"></iframe></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row" style="background-color:#fff">
+            <div class="span12">
+                <div class="topborder"></div>
+            </div>
+        </div>
+
+        <div id="footer" class="row" style="background-color:#fff">
+            <div class="span3">
+                <p>作者：<a href="http://weibo.com/liaoxuefeng" target="_blank">@廖雪峰</a></p>
+                <p><iframe width="136" height="24" frameborder="0" allowtransparency="true" marginwidth="0" marginheight="0" scrolling="no" border="0" src="http://widget.weibo.com/relationship/followbutton.php?language=zh_cn&width=136&height=24&uid=1658384301&style=2&btn=red&dpc=1"></iframe></p>
+            </div>
+            <div class="span3">
+                <p><a href="http://www.liaoxuefeng.com/" target="_blank">官方博客</a></p>
+                <p><a href="https://github.com/michaelliao/sinaweibopy" target="_blank">获取源码</a></p>
+            </div>
+            <div class="span3">
+                <p><a href="/static/howto.html" target="_blank">演示文档</a></p>
+                <p><a href="http://open.weibo.com/wiki/" target="_blank">新浪API文档</a></p>
+            </div>
+            <div class="span3">
+                <p>Python Web App</p>
+                <p><a href="http://sae.sina.com.cn" target="_blank"><img src="http://static.sae.sina.com.cn/image/poweredby/117X12px.gif" title="Powered by Sina App Engine"></a></p>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="span12" style="height:20px"></div>
+        </div>
+    </div>
+</body>
+</html>

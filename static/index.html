@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>mini weibo</title>
+    <!--[if lt IE 9]>
+        <script src="/static/js/html5.js"></script>
+    <![endif]-->
+    <link rel="stylesheet" href="/static/css/bootstrap.css" />
+    <link rel="stylesheet" href="/static/css/custom.css" />
+
+    <script type="text/javascript" src="/static/js/jquery-1.7.2.min.js"></script>
+    <script type="text/javascript" src="/static/js/jquery.postjson.js"></script>
+    <script type="text/javascript" src="/static/js/bootstrap.min.js"></script>
+    <script type="text/javascript">
+$(function() {
+    window.setInterval("hint()", 30000);
+    timer_check();
+    $('#btn-post').click(post_weibo);
+    load_weibo();
+    load_friends();
+});
+
+function load_friends() {
+    $.postJSON('/friends', '', function(result) {
+            if (result.error) {
+                $('#friend-list').prepend('<div>获取好友失败！</div>');
+            }
+            else {
+                L = []
+                $.each(result, function(index, u) {
+                        L.push('<div><a href="http://weibo.com/' + u.profile_url + '" target="_blank"><img class="small" src="' + u.profile_image_url + '" /></a></div>');
+                });
+                $('#friend-list').prepend(L.join(''));
+            }
+    }).error(function() {
+            $('#friend-list').prepend('<div>获取好友失败！</div>');
+    });
+}
+
+function timer_check() {
+    var left_chars = get_left_chars();
+    chars = Math.floor(left_chars / 2)
+    if (left_chars < 0) {
+        $('#div-count').html('已超出<span id="span-post-count" class="overflow">' + (0-chars) + '</span>字');
+    }
+    else {
+        $('#div-count').html('还可以输入<span id="span-post-count">' + chars + '</span>字');
+    }
+    setTimeout('timer_check()', 500);
+}
+
+function get_left_chars() {
+    var s = $('#text-post').val();
+    var n = 0;
+    for (var i=0; i<s.length; i++) {
+        n += ((s.charCodeAt(i)>127) ? 2 : 1)
+    }
+    return 280 - n;
+}
+
+function update_count() {
+    var n = get_left_chars();
+    
+}
+
+function is_loading() {
+    return $('#span-loading').is(':visible');
+}
+
+function hint() {
+    if (is_loading()) {
+        return;
+    }
+    $.postJSON('/hint', '', function(result) {
+            if (result.error) {
+                // do nothing
+            }
+            else {
+                if (is_loading())
+                    return;
+                if (result.status==0)
+                    return;
+                $('#span-load-ok').hide();
+                $('#span-load-failed').hide();
+                $('#span-load-hint').html('<a href="javascript:load_weibo()">有' + result.status + '条新微博，点击查看</a>').show();
+            }
+    })
+}
+
+var g_ids = new Array();
+var g_all = /(\@[^\s\:\uff1a\@]+)|(\#[^\#]+\#)|(http\:\/\/[a-zA-Z0-9\_\/\.\-]+)/g;
+var g_at = /^\@[^\s\:\uff1a\@]+$/;
+var g_topic = /^\#[^\#]+\#$/;
+var g_link = /^http\:\/\/[a-zA-Z0-9\_\/\.\-]+$/;
+
+function format_text(t) {
+    ss = t.split(g_all);
+    L = []
+    $.each(ss, function(index, s) {
+        if (s===undefined)
+            return;
+        if (g_at.test(s)) {
+            L.push('<a href="http://weibo.com/n/' + s.substring(1) + '" target="_blank">' + s + '</a>');
+        }
+        else if (g_topic.test(s)) {
+            L.push('<a href="http://huati.weibo.com/k/' + s.substring(1, s.length-1) + '" target="_blank">' + s + '</a>');
+        }
+        else if (g_link.test(s)) {
+            L.push('<a href="' + s + '" target="_blank">' + s + '</a>');
+        }
+        else {
+            L.push(s);
+        }
+    });
+    return L.join('');
+}
+
+function format_time(t) {
+    var today = new Date();
+    var now = today.getTime() / 1000;
+    var last = parseInt(now - t);
+    if (last < 60)
+        return '1分钟前';
+    var min = parseInt(last / 60);
+    if (min < 60)
+        return min + '分钟前';
+    var hour = parseInt(last / 3600);
+    if (hour < 24)
+        return hour + '小时前';
+    var d = new Date(t * 1000);
+    if (today.getFullYear()==d.getFullYear())
+        return (d.getMonth()+1) + '月' + d.getDate() + '日';
+    return d.getFullYear() + '年' + (d.getMonth()+1) + '月' + d.getDate() + '日';
+}
+
+function append_weibo(statuses) {
+    var L = [];
+    $.each(statuses, function(index, st) {
+        var id = st.id;
+        if (g_ids[id]===undefined)
+            g_ids[id] = id;
+        else
+            return;
+        L.push('<div class="weibo">');
+        L.push('  <div class="weibo-img"><img class="small" src="' + st.user.profile_image_url + '" /></div>');
+        L.push('  <div class="weibo-user"><a href="http://weibo.com/' + st.user.profile_url + '" target="_blank">' + st.user.screen_name + '</a><i class="v-' + st.user.verified_type + '"></i></div>');
+        L.push('  <div class="weibo-text">' + format_text(st.text) + '</div>');
+        if (st.thumbnail_pic) {
+            L.push('  <div class="weibo-pic"><a href="' + st.original_pic + '" target="_blank"><img src="' + st.thumbnail_pic + '" /></a></div>');
+        }
+        if (st.retweeted_status) {
+            L.push('  <div class="weibo-ref">');
+            L.push('    <div class="weibo-user"><a href="http://weibo.com/' + st.retweeted_status.user.profile_url + '" target="_blank">@' + st.retweeted_status.user.screen_name + '</a><i class="v-' + st.retweeted_status.user.verified_type + '"></i></div>');
+            L.push('    <div class="weibo-text">' + format_text(st.retweeted_status.text) + '</div>');
+            if (st.retweeted_status.thumbnail_pic) {
+                L.push('  <div class="weibo-pic"><a href="' + st.retweeted_status.original_pic + '" target="_blank"><img src="' + st.retweeted_status.thumbnail_pic + '" /></a></div>');
+            }
+            L.push('    <div class="weibo-time">' + format_time(st.retweeted_status.created_at) + ' | 转发(' + st.retweeted_status.reposts_count + ') | 评论(' + st.retweeted_status.comments_count + ')</div>');
+            L.push('  </div>');
+        }
+        L.push('  <div class="weibo-time">' + format_time(st.created_at) + ' | 转发(' + st.reposts_count + ') | 评论(' + st.comments_count + ')</div>');
+        L.push('</div>');
+    });
+    $('#weibo-list').prepend(L.join('\n'));
+}
+
+function load_weibo() {
+    $('#span-loading').show();
+    $('#span-load-ok').hide();
+    $('#span-load-hint').hide();
+    $('#span-load-failed').hide();
+    $.postJSON('/load', '', function(result) {
+            $('#span-loading').hide();
+            if (result.error) {
+                $('#span-load-failed').show();
+            }
+            else {
+                $('#span-load-ok').text('获取到' + result.length + '条新微博').show();
+                append_weibo(result);
+            }
+    }).error(function() {
+            $('#span-loading').hide();
+            $('#span-load-failed').show();
+    });
+}
+
+function post_weibo() {
+    var fdata = $('#form-post').serialize();
+    var n = get_left_chars();
+    if (n==280) {
+        alert('写点什么再发布吧！');
+        return;
+    }
+    if (n<0) {
+        alert('已超出字数限制！');
+        return;
+    }
+    $('#text-post').attr('disabled', 'disabled');
+    $('#btn-post').attr('disabled', 'disabled');
+    $('#span-posting').show();
+    $('#span-post-failed').hide();
+    $('#span-post-ok').hide();
+    // ajax post:
+    $.postJSON('/update', fdata, function(result) {
+            $('#text-post').removeAttr('disabled');
+            $('#btn-post').removeAttr('disabled');
+            $('#span-posting').hide();
+            if (result.error) {
+                $('#span-post-failed').show();
+            }
+            else {
+                $('#span-post-ok').show();
+                $('#text-post').val('');
+                load_weibo();
+            }
+    }).error(function() {
+            $('#text-post').removeAttr('disabled');
+            $('#btn-post').removeAttr('disabled');
+            $('#span-posting').hide();
+            $('#span-post-failed').show();
+    });
+}
+    </script>
+</head>
+<body>
+    <div class="navbar navbar-fixed-top">
+        <div class="navbar-inner">
+            <div class="container" style="width:940px">
+                <div class="nav-collapse">
+                    <ul class="nav">
+                        <li><a href="/">我的微博</a></li>
+                        <li><a href="http://michaelliao.github.com/sinaweibopy/" target="_blank">源码</a></li>
+                    </ul>
+                    <ul class="nav pull-right" style="padding-right:20px">
+                        <li><a href="/signout">登出</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div><!-- /navbar -->
+
+    <div class="container">
+        <div class="row">
+            <div class="span3">
+                <div style="height:60px"></div>
+            </div>
+        </div>
+
+        <div class="row" style="background-color:#fff">
+            <div class="span3">
+                <div class="rightborder" style="height: 30px"></div>
+            </div>
+        </div>
+
+        <div class="row" style="background-color:#fff">
+            <div class="span3">
+                <div class="rightborder mylogo">
+                    <div class="big"><img class="big" src="{{ user.image_url }}" /></div>
+                    <div class="info">关注：<span>{{ user.friends_count }}</span></div>
+                    <div class="info">粉丝：<span>{{ user.followers_count }}</span></div>
+                    <div class="info">微博：<span>{{ user.statuses_count }}</span></div>
+                    <div class="clearfix"></div>
+                    <div class="name">廖雪峰<i class="v-{{ user.verified_type }}"></i></div>
+                </div>
+                <div class="rightborder" style="height: 20px"></div>
+            </div>
+            <div class="span9">
+                <div style="padding-left:30px">
+                    <div id="div-count" class="count">还可以输入<span id="span-post-count">140</span>字</div>
+                    <div class="shadow">有什么新鲜事想告诉大家?</div>
+                    <div><form id="form-post" name="form-post" style="margin:0px; padding:0px;" method="post" action="/any"><textarea id="text-post" name="status" style="width:640px;height:40px;resize:none;"></textarea></form></div>
+                    <div><button id="btn-post" class="btn">发布</button> <span id="span-posting" class="loading hide">正在发布……</span><span id="span-post-ok" class="hide">发布成功！</span><span id="span-post-failed" class="hide">发布失败，请重试！</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row topborder" style="background-color:#fff">
+            <div class="span3">
+                <div class="rightborder recommend" style="padding-top:20px">
+                    <div class="h4">我的好友</div>
+                    <div id="friend-list" class="list">
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="clearfix"></div>
+                </div>
+            </div>
+
+            <div class="span9" style="padding-top:20px">
+                <div class="row">
+                    <div class="span9">
+                        <div id="weibo-hint" class="hint">
+                            <span id="span-loading" class="loading">正在加载，请稍候……</span>
+                            <span id="span-load-ok" class="hide">LOADED</span>
+                            <span id="span-load-hint" class="hide"><a href="javascript:load_weibo()">HINT</a></span>
+                            <span id="span-load-failed" class="hide">加载失败，请<a href="javascript:load_weibo()">点击重试</a>。</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div id="weibo-list" class="span9">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row" style="background-color:#fff">
+            <div class="span12">
+                <div class="topborder"></div>
+            </div>
+        </div>
+
+        <div id="footer" class="row" style="background-color:#fff">
+            <div class="span3">
+                <p>作者：<a href="http://weibo.com/liaoxuefeng" target="_blank">@廖雪峰</a></p>
+                <p><iframe width="136" height="24" frameborder="0" allowtransparency="true" marginwidth="0" marginheight="0" scrolling="no" border="0" src="http://widget.weibo.com/relationship/followbutton.php?language=zh_cn&width=136&height=24&uid=1658384301&style=2&btn=red&dpc=1"></iframe></p>
+            </div>
+            <div class="span3">
+                <p><a href="http://www.liaoxuefeng.com/" target="_blank">官方博客</a></p>
+                <p><a href="https://github.com/michaelliao/sinaweibopy" target="_blank">获取源码</a></p>
+            </div>
+            <div class="span3">
+                <p><a href="/static/howto.html" target="_blank">演示文档</a></p>
+                <p><a href="http://open.weibo.com/wiki/" target="_blank">新浪API文档</a></p>
+            </div>
+            <div class="span3">
+                <p>Python Web App</p>
+                <p><a href="http://sae.sina.com.cn" target="_blank"><img src="http://static.sae.sina.com.cn/image/poweredby/117X12px.gif" title="Powered by Sina App Engine"></a></p>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="span12" style="height:20px"></div>
+        </div>
+    </div>
+</body>
+</html>

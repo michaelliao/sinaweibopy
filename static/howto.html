@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>HOWTO</title>
+</head>
+<body>
+<h1>HOW TO INSTALL DEMO</h1>
+<h3>1. 从GitHub下载源码：</h3>
+<p><a href="https://github.com/michaelliao/sinaweibopy/archive/master.zip">https://github.com/michaelliao/sinaweibopy/archive/master.zip</a></p>
+<h3>2. 安装transwarp</h3>
+<p>mini weibo需要使用transwarp框架，从GitHub下载transwarp源码：</p>
+<p><a href="https://github.com/michaelliao/transwarp/archive/master.zip">https://github.com/michaelliao/transwarp/archive/master.zip</a></p>
+<p>或者通过pip安装：</p>
+<p>pip install transwarp</p>
+<h3>3. 创建MySQL数据库weibo及以下两个表：</h3>
+<p>执行以下SQL：</p>
+<p>create table settings (id varchar(50) not null, value varchar(1000) not null, primary key(id));</p>
+<p>create table users (id varchar(200) not null, name varchar(50) not null, image_url varchar(1000) not null, statuses_count bigint not null, friends_count bigint not null, followers_count bigint not null, verified bool not null, verified_type int not null, auth_token varchar(2000) not null, expired_time real not null, primary key(id));</p>
+<h3>4. 初始化MySQL用户：</h3>
+<p>如不想修改devapp.py源码，将数据库用户和口令指定为www-data和www-data，可以用以下语句：</p>
+<p>grant all privileges on weibo.* to 'www-data'@'localhost' identified by 'www-data';</p>
+<h3>5. 运行devapp.py</h3>
+<p>访问http://localhost:8080/admin设置AppID，AppSecret，初始口令为admin。</p>
+<h3>如果使用Sina AppEngine：</h3>
+<p>步骤3在SAE管理界面执行创建表操作；</p>
+<p>跳过步骤4；</p>
+<p>直接打包上传至SAE，然后访问http://&lt;app&gt;.sinaapp.com/admin设置AppID，AppSecret，初始口令为admin。</p>
+</body>
+</html>
