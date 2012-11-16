@@ -131,10 +131,9 @@ def callback():
     client = _create_client()
     r = client.request_access_token(code)
     logging.info('access token: %s' % json.dumps(r))
-    access_token, expires_in = r.access_token, r.expires_in
+    access_token, expires_in, uid = r.access_token, r.expires_in, r.uid
     client.set_access_token(access_token, expires_in)
-    uid = r.uid
-    u = client.get.users__show(uid=uid)
+    u = client.users.show.get(uid=uid)
     logging.info('got user: %s' % uid)
     users = db.select('select * from users where id=?', uid)
     user = dict(name=u.screen_name, \
