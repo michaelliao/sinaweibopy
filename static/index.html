@@ -89,13 +89,13 @@ function hint() {
 }
 
 var g_ids = new Array();
-var g_all = /(\@[^\s\:\uff1a\@]+)|(\#[^\#]+\#)|(http\:\/\/[a-zA-Z0-9\_\/\.\-]+)/g;
-var g_at = /^\@[^\s\:\uff1a\@]+$/;
+var g_all = /(\@[^\s\&\:\)\uff09\uff1a\@]+)|(\#[^\#]+\#)|(http\:\/\/[a-zA-Z0-9\_\/\.\-]+)/g;
+var g_at = /^\@[^\s\&\:\)\uff09\uff1a\@]+$/;
 var g_topic = /^\#[^\#]+\#$/;
 var g_link = /^http\:\/\/[a-zA-Z0-9\_\/\.\-]+$/;
 
 function format_text(t) {
-    ss = t.split(g_all);
+    ss = t.replace('<', '&lt;').replace('>', '&gt;').split(g_all);
     L = []
     $.each(ss, function(index, s) {
         if (s===undefined)
