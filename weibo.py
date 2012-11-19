@@ -169,9 +169,9 @@ class APIClient(object):
         self.post = HttpObject(self, _HTTP_POST)
         self.upload = HttpObject(self, _HTTP_UPLOAD)
 
-    def set_access_token(self, access_token, expires_in):
+    def set_access_token(self, access_token, expires):
         self.access_token = str(access_token)
-        self.expires = float(expires_in)
+        self.expires = float(expires)
 
     def get_authorize_url(self, redirect_uri=None, **kw):
         '''
@@ -180,9 +180,10 @@ class APIClient(object):
         redirect = redirect_uri if redirect_uri else self.redirect_uri
         if not redirect:
             raise APIError('21305', 'Parameter absent: redirect_uri', 'OAuth2 request')
+        response_type = kw.pop('response_type', 'code')
         return '%s%s?%s' % (self.auth_url, 'authorize', \
                 _encode_params(client_id = self.client_id, \
-                        response_type = 'code', \
+                        response_type = response_type, \
                         redirect_uri = redirect, **kw))
 
     def request_access_token(self, code, redirect_uri=None):
@@ -204,7 +205,7 @@ class APIClient(object):
             rtime = int(remind_in) + current
             if rtime < expires:
                 expires = rtime
-        jo = JsonDict(access_token=r.access_token, expires_in=expires)
+        jo = JsonDict(access_token=r.access_token, expires=expires, expires_in=expires)
         uid = r.get('uid', None)
         if uid:
             jo.uid = uid
