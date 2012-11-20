@@ -261,7 +261,7 @@ function post_weibo() {
                     <div class="info">粉丝：<span>{{ user.followers_count }}</span></div>
                     <div class="info">微博：<span>{{ user.statuses_count }}</span></div>
                     <div class="clearfix"></div>
-                    <div class="name">廖雪峰<i class="v-{{ user.verified_type }}"></i></div>
+                    <div class="name">{{ user.name }}<i class="v-{{ user.verified_type }}"></i></div>
                 </div>
                 <div class="rightborder" style="height: 20px"></div>
             </div>
