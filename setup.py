@@ -1,9 +1,11 @@
 from distutils.core import setup
 import sys
 
+import weibo
+
 kw = dict(
     name = 'sinaweibopy',
-    version = '1.0.7',
+    version = weibo.__version__,
     description = 'Sina Weibo OAuth2 API Python SDK',
     long_description = open('README', 'r').read(),
     author = 'Michael Liao',
