@@ -13,7 +13,12 @@ try:
 except ImportError:
     import simplejson as json
 
-import time, urllib, urllib2, logging, mimetypes
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
+
+import gzip, time, urllib, urllib2, logging, mimetypes
 
 class APIError(StandardError):
     '''
@@ -104,6 +109,17 @@ def _http_upload(url, authorization=None, **kw):
     logging.info('MULTIPART POST %s' % url)
     return _http_call(url, _HTTP_UPLOAD, authorization, **kw)
 
+def _read_body(obj):
+    using_gzip = obj.headers.get('Content-Encoding', '')=='gzip'
+    body = obj.read()
+    if using_gzip:
+        logging.info('gzip content received.')
+        gzipper = gzip.GzipFile(fileobj=StringIO(body))
+        fcontent = gzipper.read()
+        gzipper.close()
+        return fcontent
+    return body
+
 def _http_call(the_url, method, authorization, **kw):
     '''
     send an http request and expect to return a json object if no error.
@@ -122,19 +138,20 @@ def _http_call(the_url, method, authorization, **kw):
     http_url = '%s?%s' % (the_url, params) if method==_HTTP_GET else the_url
     http_body = None if method==_HTTP_GET else params
     req = urllib2.Request(http_url, data=http_body)
+    req.add_header('Accept-Encoding', 'gzip')
     if authorization:
         req.add_header('Authorization', 'OAuth2 %s' % authorization)
     if boundary:
         req.add_header('Content-Type', 'multipart/form-data; boundary=%s' % boundary)
     try:
         resp = urllib2.urlopen(req)
-        body = resp.read()
+        body = _read_body(resp)
         r = _parse_json(body)
         if hasattr(r, 'error_code'):
             raise APIError(r.error_code, r.get('error', ''), r.get('request', ''))
         return r
     except urllib2.HTTPError, e:
-        r = _parse_json(e.read())
+        r = _parse_json(_read_body(e))
         if hasattr(r, 'error_code'):
             raise APIError(r.error_code, r.get('error', ''), r.get('request', ''))
         raise
