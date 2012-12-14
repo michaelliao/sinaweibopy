@@ -13,3 +13,7 @@ Version 1.0.7 released 2012-11-15
 Version 1.0.8 released 2012-12-02
 
 * Add gzip support.
+
+Version 1.0.9 released 2012-12-14
+
+* Add in-site app support.
