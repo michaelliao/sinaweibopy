@@ -18,7 +18,7 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-import gzip, time, urllib, urllib2, logging, mimetypes
+import gzip, time, hmac, base64, hashlib, urllib, urllib2, logging, mimetypes
 
 class APIError(StandardError):
     '''
@@ -174,8 +174,8 @@ class APIClient(object):
     API client using synchronized invocation.
     '''
     def __init__(self, app_key, app_secret, redirect_uri=None, response_type='code', domain='api.weibo.com', version='2'):
-        self.client_id = app_key
-        self.client_secret = app_secret
+        self.client_id = str(app_key)
+        self.client_secret = str(app_secret)
         self.redirect_uri = redirect_uri
         self.response_type = response_type
         self.auth_url = 'https://%s/oauth2/' % domain
@@ -185,6 +185,36 @@ class APIClient(object):
         self.get = HttpObject(self, _HTTP_GET)
         self.post = HttpObject(self, _HTTP_POST)
         self.upload = HttpObject(self, _HTTP_UPLOAD)
+
+    def parse_signed_request(self, signed_request):
+        '''
+        parse signed request when using in-site app.
+
+        Returns:
+            dict object that like { 'uid': 12345, 'access_token': 'ABC123XYZ', 'expires': unix-timestamp }, 
+            or None if parse failed.
+        '''
+
+        def _b64_normalize(s):
+            appendix = '=' * (4 - len(s) % 4)
+            return s.replace('-', '+').replace('_', '/') + appendix
+
+        sr = str(signed_request)
+        logging.info('parse signed request: %s' % sr)
+        enc_sig, enc_payload = sr.split('.', 1)
+        sig = base64.b64decode(_b64_normalize(enc_sig))
+        data = _parse_json(base64.b64decode(_b64_normalize(enc_payload)))
+        if data['algorithm'] != u'HMAC-SHA256':
+            return None
+        expected_sig = hmac.new(self.client_secret, enc_payload, hashlib.sha256).digest();
+        if expected_sig==sig:
+            data.user_id = data.uid = data.get('user_id', None)
+            data.access_token = data.get('oauth_token', None)
+            expires = data.get('expires', None)
+            if expires:
+                data.expires = data.expires_in = time.time() + expires
+            return data
+        return None
 
     def set_access_token(self, access_token, expires):
         self.access_token = str(access_token)
