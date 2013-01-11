@@ -151,10 +151,13 @@ def _http_call(the_url, method, authorization, **kw):
             raise APIError(r.error_code, r.get('error', ''), r.get('request', ''))
         return r
     except urllib2.HTTPError, e:
-        r = _parse_json(_read_body(e))
+        try:
+            r = _parse_json(_read_body(e))
+        except:
+            r = None
         if hasattr(r, 'error_code'):
             raise APIError(r.error_code, r.get('error', ''), r.get('request', ''))
-        raise
+        raise e
 
 class HttpObject(object):
 
