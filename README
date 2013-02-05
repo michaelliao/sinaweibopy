@@ -1,0 +1,15 @@
+Sina Weibo OAuth 2 API Python SDK
+
+This software is a 100% pure Python interface to Sina Weibo API which provides OAuth2.0 authentication and API calling wrapper.
+
+You can find docs and source code at:
+
+http://michaelliao.github.com/sinaweibopy/
+
+Developed and mantained by Michael Liao. Please feel free to report bugs and your suggestions at:
+
+https://github.com/michaelliao/sinaweibopy
+
+For more information, please refer to the wiki:
+
+https://github.com/michaelliao/sinaweibopy/wiki/OAuth2-HOWTO

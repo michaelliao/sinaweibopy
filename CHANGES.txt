@@ -17,3 +17,7 @@ Version 1.0.8 released 2012-12-02
 Version 1.0.9 released 2012-12-14
 
 * Add in-site app support.
+
+Version 1.1.0 released 2013-02-05
+
+* Update docs.

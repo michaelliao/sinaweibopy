@@ -6,7 +6,7 @@ import weibo
 kw = dict(
     name = 'sinaweibopy',
     version = weibo.__version__,
-    description = 'Sina Weibo OAuth2 API Python SDK',
+    description = 'Sina Weibo OAuth 2 API Python SDK',
     long_description = open('README', 'r').read(),
     author = 'Michael Liao',
     author_email = 'askxuefeng@gmail.com',
