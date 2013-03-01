@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-__version__ = '1.1.0'
+__version__ = '1.1.1'
 __author__ = 'Liao Xuefeng (askxuefeng@gmail.com)'
 
 '''
@@ -46,17 +46,15 @@ def _parse_json(s):
 
 class JsonDict(dict):
     ' general json object that allows attributes to be bound to and also behaves like a dict '
+
     def __getattr__(self, attr):
-        return self[attr]
+        try:
+            return self[attr]
+        except KeyError:
+            raise AttributeError(r"'JsonDict' object has no attribute '%s'" % attr)
 
     def __setattr__(self, attr, value):
         self[attr] = value
-
-    def __getstate__(self):
-        return self.copy()
-
-    def __setstate__(self, state):
-        self.update(state)
 
 def _encode_params(**kw):
     ' do url-encode parameters '
