@@ -25,3 +25,7 @@ Version 1.1.0 released 2013-02-05
 Version 1.1.1 released 2013-03-01
 
 * Fix pickle problems.
+
+Version 1.1.2 released 2013-03-26
+
+* Fix urlencode of list params.

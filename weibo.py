@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-__version__ = '1.1.1'
+__version__ = '1.1.2'
 __author__ = 'Liao Xuefeng (askxuefeng@gmail.com)'
 
 '''
@@ -18,7 +18,7 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-import gzip, time, hmac, base64, hashlib, urllib, urllib2, logging, mimetypes
+import gzip, time, hmac, base64, hashlib, urllib, urllib2, logging, mimetypes, collections
 
 class APIError(StandardError):
     '''
@@ -57,11 +57,26 @@ class JsonDict(dict):
         self[attr] = value
 
 def _encode_params(**kw):
-    ' do url-encode parameters '
+    '''
+    do url-encode parameters
+
+    >>> _encode_params(a=1, b='R&D')
+    'a=1&b=R%26D'
+    >>> _encode_params(a=u'\u4e2d\u6587', b=['A', 'B', 123])
+    'a=%E4%B8%AD%E6%96%87&b=A&b=B&b=123'
+    '''
     args = []
     for k, v in kw.iteritems():
-        qv = v.encode('utf-8') if isinstance(v, unicode) else str(v)
-        args.append('%s=%s' % (k, urllib.quote(qv)))
+        if isinstance(v, basestring):
+            qv = v.encode('utf-8') if isinstance(v, unicode) else v
+            args.append('%s=%s' % (k, urllib.quote(qv)))
+        elif isinstance(v, collections.Iterable):
+            for i in v:
+                qv = i.encode('utf-8') if isinstance(i, unicode) else str(i)
+                args.append('%s=%s' % (k, urllib.quote(qv)))
+        else:
+            qv = str(v)
+            args.append('%s=%s' % (k, urllib.quote(qv)))
     return '&'.join(args)
 
 def _encode_multipart(**kw):
@@ -302,3 +317,6 @@ class _Callable(object):
 
     __repr__ = __str__
 
+if __name__=='__main__':
+    import doctest
+    doctest.testmod()
