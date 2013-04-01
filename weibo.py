@@ -270,6 +270,22 @@ class APIClient(object):
                 expires = rtime
         return JsonDict(access_token=r.access_token, expires=expires, expires_in=expires, uid=r.get('uid', None))
 
+    def refresh_token(self, refresh_token):
+        req_str = '%s%s' % (self.auth_url, 'access_token')
+        r = _http_post(req_str, \
+            client_id = self.client_id, \
+            client_secret = self.client_secret, \
+            refresh_token = refresh_token, \
+            grant_type = 'refresh_token')
+        current = int(time.time())
+        expires = r.expires_in + current
+        remind_in = r.get('remind_in', None)
+        if remind_in:
+            rtime = int(remind_in) + current
+            if rtime < expires:
+                expires = rtime
+        return JsonDict(access_token=r.access_token, expires=expires, expires_in=expires, uid=r.get('uid', None))
+
     def is_expires(self):
         return not self.access_token or time.time() > self.expires
 
