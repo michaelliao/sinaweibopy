@@ -104,7 +104,7 @@ def _guess_content_type(url):
     if n==(-1):
         return 'application/octet-stream'
     ext = url[n:]
-    mimetypes.types_map.get(ext, 'application/octet-stream')
+    return mimetypes.types_map.get(ext, 'application/octet-stream')
 
 _HTTP_GET = 0
 _HTTP_POST = 1
