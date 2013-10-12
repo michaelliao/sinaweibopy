@@ -247,11 +247,21 @@ class APIClient(object):
                 _encode_params(client_id = self.client_id, \
                         response_type = response_type, \
                         redirect_uri = redirect, **kw))
-
+                        
+    def parse_access_token(self, r):
+        '''
+        new:return access token as a JsonDict: {"access_token":"your-access-token","expires_in":12345678,"uid":1234}, expires_in is represented using standard unix-epoch-time
+        '''
+        current = int(time.time())
+        expires = r.expires_in + current
+        remind_in = r.get('remind_in', None)
+        if remind_in:
+            rtime = int(remind_in) + current
+            if rtime < expires:
+                expires = rtime
+        return JsonDict(access_token=r.access_token, expires=expires, expires_in=expires, uid=r.get('uid', None))
+        
     def request_access_token(self, code, redirect_uri=None):
-        '''
-        return access token as a JsonDict: {"access_token":"your-access-token","expires_in":12345678,"uid":1234}, expires_in is represented using standard unix-epoch-time
-        '''
         redirect = redirect_uri if redirect_uri else self.redirect_uri
         if not redirect:
             raise APIError('21305', 'Parameter absent: redirect_uri', 'OAuth2 request')
@@ -260,14 +270,7 @@ class APIClient(object):
                 client_secret = self.client_secret, \
                 redirect_uri = redirect, \
                 code = code, grant_type = 'authorization_code')
-        current = int(time.time())
-        expires = r.expires_in + current
-        remind_in = r.get('remind_in', None)
-        if remind_in:
-            rtime = int(remind_in) + current
-            if rtime < expires:
-                expires = rtime
-        return JsonDict(access_token=r.access_token, expires=expires, expires_in=expires, uid=r.get('uid', None))
+        return self.parse_access_token(r)
 
     def refresh_token(self, refresh_token):
         req_str = '%s%s' % (self.auth_url, 'access_token')
@@ -276,14 +279,7 @@ class APIClient(object):
             client_secret = self.client_secret, \
             refresh_token = refresh_token, \
             grant_type = 'refresh_token')
-        current = int(time.time())
-        expires = r.expires_in + current
-        remind_in = r.get('remind_in', None)
-        if remind_in:
-            rtime = int(remind_in) + current
-            if rtime < expires:
-                expires = rtime
-        return JsonDict(access_token=r.access_token, expires=expires, expires_in=expires, uid=r.get('uid', None))
+        return self.parse_access_token(r)
 
     def is_expires(self):
         return not self.access_token or time.time() > self.expires
