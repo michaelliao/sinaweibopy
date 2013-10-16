@@ -156,7 +156,7 @@ def _http_call(the_url, method, authorization, **kw):
     if boundary:
         req.add_header('Content-Type', 'multipart/form-data; boundary=%s' % boundary)
     try:
-        resp = urllib2.urlopen(req)
+        resp = urllib2.urlopen(req, timeout=5)
         body = _read_body(resp)
         r = _parse_json(body)
         if hasattr(r, 'error_code'):
