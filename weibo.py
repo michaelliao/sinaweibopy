@@ -248,7 +248,7 @@ class APIClient(object):
                         response_type = response_type, \
                         redirect_uri = redirect, **kw))
                         
-    def parse_access_token(self, r):
+    def _parse_access_token(self, r):
         '''
         new:return access token as a JsonDict: {"access_token":"your-access-token","expires_in":12345678,"uid":1234}, expires_in is represented using standard unix-epoch-time
         '''
@@ -270,7 +270,7 @@ class APIClient(object):
                 client_secret = self.client_secret, \
                 redirect_uri = redirect, \
                 code = code, grant_type = 'authorization_code')
-        return self.parse_access_token(r)
+        return self._parse_access_token(r)
 
     def refresh_token(self, refresh_token):
         req_str = '%s%s' % (self.auth_url, 'access_token')
@@ -279,7 +279,7 @@ class APIClient(object):
             client_secret = self.client_secret, \
             refresh_token = refresh_token, \
             grant_type = 'refresh_token')
-        return self.parse_access_token(r)
+        return self._parse_access_token(r)
 
     def is_expires(self):
         return not self.access_token or time.time() > self.expires
