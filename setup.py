@@ -24,7 +24,4 @@ kw = dict(
         'Topic :: Software Development :: Libraries :: Python Modules',
     ])
 
-if sys.version_info[1]==5:
-    kw['install_requires'] = ['simplejson']
-
 setup(**kw)

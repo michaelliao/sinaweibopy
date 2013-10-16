@@ -33,3 +33,9 @@ Version 1.1.2 released 2013-03-26
 Version 1.1.3 released 2013-06-24
 
 * Fix _guess_mime_type(), add refresh_token().
+
+Version 1.1.4 released 2013-10-16
+
+* Add timeout=5.
+* Remove simplejson dependency.
+* Support Python 2.6 / 2.7.
