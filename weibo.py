@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-__version__ = '1.1.3'
+__version__ = '1.1.4'
 __author__ = 'Liao Xuefeng (askxuefeng@gmail.com)'
 
 '''
@@ -9,16 +9,11 @@ Python client SDK for sina weibo API using OAuth 2.
 '''
 
 try:
-    import json
-except ImportError:
-    import simplejson as json
-
-try:
     from cStringIO import StringIO
 except ImportError:
     from StringIO import StringIO
 
-import gzip, time, hmac, base64, hashlib, urllib, urllib2, logging, mimetypes, collections
+import gzip, time, json, hmac, base64, hashlib, urllib, urllib2, logging, mimetypes, collections
 
 class APIError(StandardError):
     '''
