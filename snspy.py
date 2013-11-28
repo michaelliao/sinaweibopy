@@ -287,12 +287,7 @@ class QQMixin(SNSMixin):
                         redirect_uri = redirect, **kw)
 
     def prepare_api(self, method, path, access_token, **kw):
-        if '/remind/' in path:
-            # fix sina remind api:
-            return method, 'https://rm.api.weibo.com/2/%s.json' % path
-        if method=='POST' and 'pic' in kw:
-            return 'UPLOAD', 'https://api.weibo.com/2/%s.json' % path
-        return method, 'https://api.weibo.com/2/%s.json' % path
+        return method, 'https://graph.qq.com/%s' % path
 
     def request_access_token(self, code, redirect_uri=None):
         '''
@@ -304,7 +299,7 @@ class QQMixin(SNSMixin):
                 redirect_uri=redirect, code=code, grant_type='authorization_code')
         return self._parse_access_token(resp_text)
 
-    def refresh_access_token(self, refresh_token):
+    def refresh_access_token(self, refresh_token, redirect_uri=None):
         '''
         Refresh access token.
         '''
@@ -314,6 +309,7 @@ class QQMixin(SNSMixin):
                 client_id=self._client_id, client_secret=self._client_secret, \
                 redirect_uri=redirect, grant_type='refresh_token')
         return self._parse_access_token(resp_text)
+        # FIXME: get oauthid from 'https://graph.z.qq.com/moc2/me?access_token=%s' % access_token
 
     def _parse_access_token(self, resp_text):
         ' parse access token from urlencoded str like access_token=abcxyz&expires_in=123000&other=true '
@@ -336,7 +332,7 @@ class APIClient(object):
         '''
         parse signed request when using in-site app.
         '''
-        if has_attr(self._mixin, 'parse_signed_request'):
+        if hasattr(self._mixin, 'parse_signed_request'):
             return self._mixin.parse_signed_request(signed_request)
         raise StandardError('Does not provide a function \'parse_signed_request\' in mixin \'%s\'.' % self._mixin.get_name())
 
@@ -428,12 +424,12 @@ class _Callable(object):
     __repr__ = __str__
 
 if __name__=='__main__':
-    import base64py
+    import base64
     #import doctest
     #doctest.testmod()
-    APP_KEY = '2373761036'
-    APP_SECRET = ''
-    access_token = ''
+    APP_KEY = '???'
+    APP_SECRET = '???'
+    access_token = '???'
     c = APIClient(SinaWeiboMixin, APP_KEY, APP_SECRET, 'http://sinaweibopy.sinaapp.com/auth/callback?a=1', access_token)
     # test get:
     #r = c.statuses.home_timeline.get(count=10)
