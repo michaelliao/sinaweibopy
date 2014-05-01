@@ -13,12 +13,27 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-import gzip, time, json, hmac, base64, hashlib, urllib, urllib2, urlparse, logging, mimetypes, collections
+import time
+import json
+
+import hmac
+import hashlib
+import base64
+
+import urllib
+import urllib2
+import urlparse
+import gzip
+
+import logging
+import mimetypes
+import collections
+
 
 class JsonDict(dict):
     '''
     General json object that allows attributes to be bound to and also behaves like a dict.
-    
+
     >>> jd = JsonDict(a=1, b='test')
     >>> jd.a
     1
@@ -44,6 +59,7 @@ class JsonDict(dict):
     def __setattr__(self, attr, value):
         self[attr] = value
 
+
 class APIError(StandardError):
     '''
     raise APIError if receiving json message indicating failure.
@@ -57,6 +73,7 @@ class APIError(StandardError):
     def __str__(self):
         return 'APIError: %s: %s, request: %s' % (self.error_code, self.error, self.request)
 
+
 def _parse_json(s):
     '''
     Parse json string into JsonDict.
@@ -68,6 +85,7 @@ def _parse_json(s):
     95
     '''
     return json.loads(s, object_hook=lambda pairs: JsonDict(pairs.iteritems()))
+
 
 def _encode_params(**kw):
     '''
@@ -93,6 +111,7 @@ def _encode_params(**kw):
         _encode(args, k, v)
     return '&'.join(args)
 
+
 def _encode_multipart(**kw):
     ' build a multipart/form-data body with randomly generated boundary '
     boundary = '----------%s' % hex(int(time.time() * 1000))
@@ -113,10 +132,11 @@ def _encode_multipart(**kw):
     data.append('--%s--\r\n' % boundary)
     return '\r\n'.join(data), boundary
 
+
 def _guess_content_type(url):
     '''
     Guess content type by url.
-    
+
     >>> _guess_content_type('http://test/A.HTML')
     'text/html'
     >>> _guess_content_type('http://test/a.jpg')
@@ -126,7 +146,7 @@ def _guess_content_type(url):
     '''
     OCTET_STREAM = 'application/octet-stream'
     n = url.rfind('.')
-    if n==(-1):
+    if n == -1:
         return OCTET_STREAM
     return mimetypes.types_map.get(url[n:].lower(), OCTET_STREAM)
 
@@ -134,8 +154,9 @@ _HTTP_GET = 'GET'
 _HTTP_POST = 'POST'
 _HTTP_UPLOAD = 'UPLOAD'
 
+
 def _read_http_body(http_obj):
-    using_gzip = http_obj.headers.get('Content-Encoding', '')=='gzip'
+    using_gzip = http_obj.headers.get('Content-Encoding', '') == 'gzip'
     body = http_obj.read()
     if using_gzip:
         gzipper = gzip.GzipFile(fileobj=StringIO(body))
@@ -144,18 +165,19 @@ def _read_http_body(http_obj):
         return fcontent
     return body
 
+
 def _http(method, url, headers=None, **kw):
     '''
     Send http request and return response text.
     '''
     params = None
     boundary = None
-    if method=='UPLOAD':
+    if method == 'UPLOAD':
         params, boundary = _encode_multipart(**kw)
     else:
         params = _encode_params(**kw)
-    http_url = '%s?%s' % (url, params) if method==_HTTP_GET else url
-    http_body = None if method=='GET' else params
+    http_url = '%s?%s' % (url, params) if method == _HTTP_GET else url
+    http_body = None if method == 'GET' else params
     logging.error('%s: %s' % (method, http_url))
     req = urllib2.Request(http_url, data=http_body)
     req.add_header('Accept-Encoding', 'gzip')
@@ -169,6 +191,7 @@ def _http(method, url, headers=None, **kw):
         return _read_http_body(resp)
     finally:
         pass
+
 
 class SNSMixin(object):
 
@@ -189,6 +212,7 @@ class SNSMixin(object):
             raise APIError(r.error_code, r.get('error', ''), r.get('request', ''))
         raise e
 
+
 class SinaWeiboMixin(SNSMixin):
 
     def get_authorize_url(self, redirect_uri, **kw):
@@ -200,9 +224,9 @@ class SinaWeiboMixin(SNSMixin):
             raise APIError('21305', 'Parameter absent: redirect_uri', 'OAuth2 request')
         response_type = kw.pop('response_type', 'code')
         return 'https://api.weibo.com/oauth2/authorize?%s' % \
-                _encode_params(client_id = self._client_id, \
-                        response_type = response_type, \
-                        redirect_uri = redirect, **kw)
+               _encode_params(client_id=self._client_id,
+                              response_type=response_type,
+                              redirect_uri=redirect, **kw)
 
     def _prepare_api(self, method, path, access_token, **kw):
         '''
@@ -210,11 +234,11 @@ class SinaWeiboMixin(SNSMixin):
         '''
         headers = None
         if access_token:
-            headers = { 'Authorization': 'OAuth2 %s' % access_token }
+            headers = {'Authorization': 'OAuth2 %s' % access_token}
         if '/remind/' in path:
             # sina remind api url is different:
             return method, 'https://rm.api.weibo.com/2/%s.json' % path, headers, kw
-        if method=='POST' and 'pic' in kw:
+        if method == 'POST' and 'pic' in kw:
             # if 'pic' in parameter, set to UPLOAD mode:
             return 'UPLOAD', 'https://api.weibo.com/2/%s.json' % path, headers, kw
         return method, 'https://api.weibo.com/2/%s.json' % path, headers, kw
@@ -224,9 +248,9 @@ class SinaWeiboMixin(SNSMixin):
         Return access token as a JsonDict: {"access_token":"your-access-token","expires":12345678,"uid":1234}, expires is represented using standard unix-epoch-time
         '''
         redirect = redirect_uri or self._redirect_uri
-        resp_text = _http('POST', 'https://api.weibo.com/oauth2/access_token', \
-                client_id=self._client_id, client_secret=self._client_secret, \
-                redirect_uri=redirect, code=code, grant_type='authorization_code')
+        resp_text = _http('POST', 'https://api.weibo.com/oauth2/access_token',
+                          client_id=self._client_id, client_secret=self._client_secret,
+                          redirect_uri=redirect, code=code, grant_type='authorization_code')
         r = _parse_json(resp_text)
         current = int(time.time())
         expires = r.expires_in + current
@@ -256,8 +280,8 @@ class SinaWeiboMixin(SNSMixin):
         data = _parse_json(base64.b64decode(_b64_normalize(enc_payload)))
         if data['algorithm'] != u'HMAC-SHA256':
             return None
-        expected_sig = hmac.new(self.client_secret, enc_payload, hashlib.sha256).digest();
-        if expected_sig==sig:
+        expected_sig = hmac.new(self.client_secret, enc_payload, hashlib.sha256).digest()
+        if expected_sig == sig:
             data.user_id = data.uid = data.get('user_id', None)
             data.access_token = data.get('oauth_token', None)
             expires = data.get('expires', None)
@@ -265,6 +289,7 @@ class SinaWeiboMixin(SNSMixin):
                 data.expires = data.expires_in = time.time() + expires
             return data
         return None
+
 
 class QQMixin(SNSMixin):
 
@@ -277,9 +302,9 @@ class QQMixin(SNSMixin):
             raise APIError('21305', 'Parameter absent: redirect_uri', 'OAuth2 request')
         response_type = kw.pop('response_type', 'code')
         return 'https://graph.qq.com/oauth2.0/authorize?%s' % \
-                _encode_params(client_id = self._client_id, \
-                        response_type = response_type, \
-                        redirect_uri = redirect, **kw)
+               _encode_params(client_id=self._client_id,
+                              response_type=response_type,
+                              redirect_uri=redirect, **kw)
 
     def _prepare_api(self, method, path, access_token, **kw):
         kw['access_token'] = access_token
@@ -291,9 +316,9 @@ class QQMixin(SNSMixin):
         Return access token as a JsonDict: {"access_token":"your-access-token","expires":12345678,"uid":1234}, expires is represented using standard unix-epoch-time
         '''
         redirect = redirect_uri or self._redirect_uri
-        resp_text = _http('POST', 'https://graph.qq.com/oauth2.0/token', \
-                client_id=self._client_id, client_secret=self._client_secret, \
-                redirect_uri=redirect, code=code, grant_type='authorization_code')
+        resp_text = _http('POST', 'https://graph.qq.com/oauth2.0/token',
+                          client_id=self._client_id, client_secret=self._client_secret,
+                          redirect_uri=redirect, code=code, grant_type='authorization_code')
         return self._parse_access_token(resp_text)
 
     def refresh_access_token(self, refresh_token, redirect_uri=None):
@@ -301,10 +326,10 @@ class QQMixin(SNSMixin):
         Refresh access token.
         '''
         redirect = redirect_uri or self._redirect_uri
-        resp_text = _http('POST', 'https://graph.qq.com/oauth2.0/token', \
-                refresh_token=refresh_token, \
-                client_id=self._client_id, client_secret=self._client_secret, \
-                redirect_uri=redirect, grant_type='refresh_token')
+        resp_text = _http('POST', 'https://graph.qq.com/oauth2.0/token',
+                          refresh_token=refresh_token,
+                          client_id=self._client_id, client_secret=self._client_secret,
+                          redirect_uri=redirect, grant_type='refresh_token')
         return self._parse_access_token(resp_text)
         # FIXME: get oauthid from 'https://graph.z.qq.com/moc2/me?access_token=%s' % access_token
 
@@ -323,6 +348,7 @@ class QQMixin(SNSMixin):
         resp_text = _http('GET', 'https://graph.z.qq.com/moc2/me', access_token=access_token)
         r = self._qs2dict(resp_text)
         return r['openid']
+
 
 class APIClient(object):
     '''
@@ -358,11 +384,11 @@ class APIClient(object):
 
     def refresh_token(self, refresh_token):
         req_str = '%s%s' % (self.auth_url, 'access_token')
-        r = _http('POST', req_str, \
-            client_id = self.client_id, \
-            client_secret = self.client_secret, \
-            refresh_token = refresh_token, \
-            grant_type = 'refresh_token')
+        r = _http('POST', req_str,
+                  client_id=self.client_id,
+                  client_secret=self.client_secret,
+                  refresh_token=refresh_token,
+                  grant_type='refresh_token')
         return self._parse_access_token(r)
 
     def is_expires(self):
@@ -385,6 +411,7 @@ class APIClient(object):
             return getattr(self._mixin, attr)
         return _Callable(self, attr)
 
+
 class _Executable(object):
 
     def __init__(self, client, method, path):
@@ -400,6 +427,7 @@ class _Executable(object):
 
     __repr__ = __str__
 
+
 class _Callable(object):
 
     def __init__(self, client, name):
@@ -407,9 +435,9 @@ class _Callable(object):
         self._name = name
 
     def __getattr__(self, attr):
-        if attr=='get':
+        if attr == 'get':
             return _Executable(self._client, 'GET', self._name)
-        if attr=='post':
+        if attr == 'post':
             return _Executable(self._client, 'POST', self._name)
         name = '%s/%s' % (self._name, attr)
         return _Callable(self._client, name)
@@ -420,7 +448,6 @@ class _Callable(object):
     __repr__ = __str__
 
 if __name__ == '__main__':
-    import base64
     #import doctest
     #doctest.testmod()
     APP_KEY = '???'
@@ -442,4 +469,3 @@ if __name__ == '__main__':
     # test remind:
     #r = c.remind.unread_count.get()
     #print r
-
