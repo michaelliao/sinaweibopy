@@ -13,7 +13,21 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-import gzip, time, json, hmac, base64, hashlib, urllib, urllib2, logging, mimetypes, collections
+import time
+import json
+
+import hmac
+import hashlib
+import base64
+
+import urllib
+import urllib2
+import gzip
+
+import logging
+import mimetypes
+import collections
+
 
 class APIError(StandardError):
     '''
@@ -28,6 +42,7 @@ class APIError(StandardError):
     def __str__(self):
         return 'APIError: %s: %s, request: %s' % (self.error_code, self.error, self.request)
 
+
 def _parse_json(s):
     ' parse str into JsonDict '
 
@@ -38,6 +53,7 @@ def _parse_json(s):
             o[str(k)] = v
         return o
     return json.loads(s, object_hook=_obj_hook)
+
 
 class JsonDict(dict):
     ' general json object that allows attributes to be bound to and also behaves like a dict '
@@ -50,6 +66,7 @@ class JsonDict(dict):
 
     def __setattr__(self, attr, value):
         self[attr] = value
+
 
 def _encode_params(**kw):
     '''
@@ -74,6 +91,7 @@ def _encode_params(**kw):
             args.append('%s=%s' % (k, urllib.quote(qv)))
     return '&'.join(args)
 
+
 def _encode_multipart(**kw):
     ' build a multipart/form-data body with randomly generated boundary '
     boundary = '----------%s' % hex(int(time.time() * 1000))
@@ -94,9 +112,10 @@ def _encode_multipart(**kw):
     data.append('--%s--\r\n' % boundary)
     return '\r\n'.join(data), boundary
 
+
 def _guess_content_type(url):
     n = url.rfind('.')
-    if n==(-1):
+    if n == -1:
         return 'application/octet-stream'
     ext = url[n:]
     return mimetypes.types_map.get(ext, 'application/octet-stream')
@@ -105,20 +124,24 @@ _HTTP_GET = 0
 _HTTP_POST = 1
 _HTTP_UPLOAD = 2
 
+
 def _http_get(url, authorization=None, **kw):
     logging.info('GET %s' % url)
     return _http_call(url, _HTTP_GET, authorization, **kw)
+
 
 def _http_post(url, authorization=None, **kw):
     logging.info('POST %s' % url)
     return _http_call(url, _HTTP_POST, authorization, **kw)
 
+
 def _http_upload(url, authorization=None, **kw):
     logging.info('MULTIPART POST %s' % url)
     return _http_call(url, _HTTP_UPLOAD, authorization, **kw)
 
+
 def _read_body(obj):
-    using_gzip = obj.headers.get('Content-Encoding', '')=='gzip'
+    using_gzip = obj.headers.get('Content-Encoding', '') == 'gzip'
     body = obj.read()
     if using_gzip:
         gzipper = gzip.GzipFile(fileobj=StringIO(body))
@@ -127,13 +150,14 @@ def _read_body(obj):
         return fcontent
     return body
 
+
 def _http_call(the_url, method, authorization, **kw):
     '''
     send an http request and return a json object if no error occurred.
     '''
     params = None
     boundary = None
-    if method==_HTTP_UPLOAD:
+    if method == _HTTP_UPLOAD:
         # fix sina upload url:
         the_url = the_url.replace('https://api.', 'https://upload.api.')
         params, boundary = _encode_multipart(**kw)
@@ -142,8 +166,8 @@ def _http_call(the_url, method, authorization, **kw):
         if '/remind/' in the_url:
             # fix sina remind api:
             the_url = the_url.replace('https://api.', 'https://rm.api.')
-    http_url = '%s?%s' % (the_url, params) if method==_HTTP_GET else the_url
-    http_body = None if method==_HTTP_GET else params
+    http_url = '%s?%s' % (the_url, params) if method == _HTTP_GET else the_url
+    http_body = None if method == _HTTP_GET else params
     req = urllib2.Request(http_url, data=http_body)
     req.add_header('Accept-Encoding', 'gzip')
     if authorization:
@@ -157,7 +181,7 @@ def _http_call(the_url, method, authorization, **kw):
         if hasattr(r, 'error_code'):
             raise APIError(r.error_code, r.get('error', ''), r.get('request', ''))
         return r
-    except urllib2.HTTPError, e:
+    except urllib2.HTTPError as e:
         try:
             r = _parse_json(_read_body(e))
         except:
@@ -165,6 +189,7 @@ def _http_call(the_url, method, authorization, **kw):
         if hasattr(r, 'error_code'):
             raise APIError(r.error_code, r.get('error', ''), r.get('request', ''))
         raise e
+
 
 class HttpObject(object):
 
@@ -178,6 +203,7 @@ class HttpObject(object):
                 raise APIError('21327', 'expired_token', attr)
             return _http_call('%s%s.json' % (self.client.api_url, attr.replace('__', '/')), self.method, self.client.access_token, **kw)
         return wrap
+
 
 class APIClient(object):
     '''
@@ -216,8 +242,8 @@ class APIClient(object):
         data = _parse_json(base64.b64decode(_b64_normalize(enc_payload)))
         if data['algorithm'] != u'HMAC-SHA256':
             return None
-        expected_sig = hmac.new(self.client_secret, enc_payload, hashlib.sha256).digest();
-        if expected_sig==sig:
+        expected_sig = hmac.new(self.client_secret, enc_payload, hashlib.sha256).digest()
+        if expected_sig == sig:
             data.user_id = data.uid = data.get('user_id', None)
             data.access_token = data.get('oauth_token', None)
             expires = data.get('expires', None)
@@ -238,11 +264,11 @@ class APIClient(object):
         if not redirect:
             raise APIError('21305', 'Parameter absent: redirect_uri', 'OAuth2 request')
         response_type = kw.pop('response_type', 'code')
-        return '%s%s?%s' % (self.auth_url, 'authorize', \
-                _encode_params(client_id = self.client_id, \
-                        response_type = response_type, \
-                        redirect_uri = redirect, **kw))
-                        
+        return '%s%s?%s' % (self.auth_url, 'authorize',
+                            _encode_params(client_id=self.client_id,
+                                           response_type=response_type,
+                                           redirect_uri=redirect, **kw))
+
     def _parse_access_token(self, r):
         '''
         new:return access token as a JsonDict: {"access_token":"your-access-token","expires_in":12345678,"uid":1234}, expires_in is represented using standard unix-epoch-time
@@ -255,25 +281,26 @@ class APIClient(object):
             if rtime < expires:
                 expires = rtime
         return JsonDict(access_token=r.access_token, expires=expires, expires_in=expires, uid=r.get('uid', None))
-        
+
     def request_access_token(self, code, redirect_uri=None):
         redirect = redirect_uri if redirect_uri else self.redirect_uri
         if not redirect:
             raise APIError('21305', 'Parameter absent: redirect_uri', 'OAuth2 request')
-        r = _http_post('%s%s' % (self.auth_url, 'access_token'), \
-                client_id = self.client_id, \
-                client_secret = self.client_secret, \
-                redirect_uri = redirect, \
-                code = code, grant_type = 'authorization_code')
+        r = _http_post('%s%s' % (self.auth_url, 'access_token'),
+                       client_id=self.client_id,
+                       client_secret=self.client_secret,
+                       redirect_uri=redirect,
+                       code=code,
+                       grant_type='authorization_code')
         return self._parse_access_token(r)
 
     def refresh_token(self, refresh_token):
         req_str = '%s%s' % (self.auth_url, 'access_token')
-        r = _http_post(req_str, \
-            client_id = self.client_id, \
-            client_secret = self.client_secret, \
-            refresh_token = refresh_token, \
-            grant_type = 'refresh_token')
+        r = _http_post(req_str,
+                       client_id=self.client_id,
+                       client_secret=self.client_secret,
+                       refresh_token=refresh_token,
+                       grant_type='refresh_token')
         return self._parse_access_token(r)
 
     def is_expires(self):
@@ -284,7 +311,12 @@ class APIClient(object):
             return getattr(self.get, attr)
         return _Callable(self, attr)
 
-_METHOD_MAP = { 'GET': _HTTP_GET, 'POST': _HTTP_POST, 'UPLOAD': _HTTP_UPLOAD }
+_METHOD_MAP = {
+    'GET': _HTTP_GET,
+    'POST': _HTTP_POST,
+    'UPLOAD': _HTTP_UPLOAD
+}
+
 
 class _Executable(object):
 
@@ -295,7 +327,7 @@ class _Executable(object):
 
     def __call__(self, **kw):
         method = _METHOD_MAP[self._method]
-        if method==_HTTP_POST and 'pic' in kw:
+        if method == _HTTP_POST and 'pic' in kw:
             method = _HTTP_UPLOAD
         return _http_call('%s%s.json' % (self._client.api_url, self._path), method, self._client.access_token, **kw)
 
@@ -304,6 +336,7 @@ class _Executable(object):
 
     __repr__ = __str__
 
+
 class _Callable(object):
 
     def __init__(self, client, name):
@@ -311,9 +344,9 @@ class _Callable(object):
         self._name = name
 
     def __getattr__(self, attr):
-        if attr=='get':
+        if attr == 'get':
             return _Executable(self._client, 'GET', self._name)
-        if attr=='post':
+        if attr == 'post':
             return _Executable(self._client, 'POST', self._name)
         name = '%s/%s' % (self._name, attr)
         return _Callable(self._client, name)
@@ -323,6 +356,6 @@ class _Callable(object):
 
     __repr__ = __str__
 
-if __name__=='__main__':
+if __name__ == '__main__':
     import doctest
     doctest.testmod()
