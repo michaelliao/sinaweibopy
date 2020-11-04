@@ -4,14 +4,11 @@
 __version__ = '1.1.4'
 __author__ = 'Liao Xuefeng (askxuefeng@gmail.com)'
 
-'''
+"""
 Python client SDK for sina weibo API using OAuth 2.
-'''
+"""
 
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
+from io import BytesIO
 
 import time
 import json
@@ -20,8 +17,9 @@ import hmac
 import hashlib
 import base64
 
-import urllib
-import urllib2
+from urllib.parse import quote
+from urllib.request import Request, urlopen
+from urllib.error import HTTPError
 import gzip
 
 import logging
@@ -29,34 +27,34 @@ import mimetypes
 import collections
 
 
-class APIError(StandardError):
-    '''
+class APIError(Exception):
+    """
     raise APIError if receiving json message indicating failure.
-    '''
+    """
     def __init__(self, error_code, error, request):
         self.error_code = error_code
         self.error = error
         self.request = request
-        StandardError.__init__(self, error)
+        Exception.__init__(self, error)
 
     def __str__(self):
         return 'APIError: %s: %s, request: %s' % (self.error_code, self.error, self.request)
 
 
 def _parse_json(s):
-    ' parse str into JsonDict '
+    """parse str into JsonDict"""
 
     def _obj_hook(pairs):
-        ' convert json object to python object '
+        """convert json object to python object"""
         o = JsonDict()
-        for k, v in pairs.iteritems():
+        for k, v in pairs.items():
             o[str(k)] = v
         return o
     return json.loads(s, object_hook=_obj_hook)
 
 
 class JsonDict(dict):
-    ' general json object that allows attributes to be bound to and also behaves like a dict '
+    """general json object that allows attributes to be bound to and also behaves like a dict"""
 
     def __getattr__(self, attr):
         try:
@@ -69,34 +67,33 @@ class JsonDict(dict):
 
 
 def _encode_params(**kw):
-    '''
+    """
     do url-encode parameters
-
     >>> _encode_params(a=1, b='R&D')
     'a=1&b=R%26D'
     >>> _encode_params(a=u'\u4e2d\u6587', b=['A', 'B', 123])
     'a=%E4%B8%AD%E6%96%87&b=A&b=B&b=123'
-    '''
+    """
     args = []
-    for k, v in kw.iteritems():
-        if isinstance(v, basestring):
-            qv = v.encode('utf-8') if isinstance(v, unicode) else v
-            args.append('%s=%s' % (k, urllib.quote(qv)))
+    for k, v in kw.items():
+        if isinstance(v, str):
+            qv = v.encode('utf-8') if isinstance(v, str) else v
+            args.append('%s=%s' % (k, quote(qv)))
         elif isinstance(v, collections.Iterable):
             for i in v:
-                qv = i.encode('utf-8') if isinstance(i, unicode) else str(i)
-                args.append('%s=%s' % (k, urllib.quote(qv)))
+                qv = i.encode('utf-8') if isinstance(i, str) else str(i)
+                args.append('%s=%s' % (k, quote(qv)))
         else:
             qv = str(v)
-            args.append('%s=%s' % (k, urllib.quote(qv)))
+            args.append('%s=%s' % (k, quote(qv)))
     return '&'.join(args)
 
 
 def _encode_multipart(**kw):
-    ' build a multipart/form-data body with randomly generated boundary '
+    """build a multipart/form-data body with randomly generated boundary"""
     boundary = '----------%s' % hex(int(time.time() * 1000))
     data = []
-    for k, v in kw.iteritems():
+    for k, v in kw.items():
         data.append('--%s' % boundary)
         if hasattr(v, 'read'):
             # file-like object:
@@ -108,7 +105,7 @@ def _encode_multipart(**kw):
             data.append(content)
         else:
             data.append('Content-Disposition: form-data; name="%s"\r\n' % k)
-            data.append(v.encode('utf-8') if isinstance(v, unicode) else v)
+            data.append(v.encode('utf-8') if isinstance(v, str) else v)
     data.append('--%s--\r\n' % boundary)
     return '\r\n'.join(data), boundary
 
@@ -119,6 +116,7 @@ def _guess_content_type(url):
         return 'application/octet-stream'
     ext = url[n:]
     return mimetypes.types_map.get(ext, 'application/octet-stream')
+
 
 _HTTP_GET = 0
 _HTTP_POST = 1
@@ -144,7 +142,7 @@ def _read_body(obj):
     using_gzip = obj.headers.get('Content-Encoding', '') == 'gzip'
     body = obj.read()
     if using_gzip:
-        gzipper = gzip.GzipFile(fileobj=StringIO(body))
+        gzipper = gzip.GzipFile(fileobj=BytesIO(body))
         fcontent = gzipper.read()
         gzipper.close()
         return fcontent
@@ -152,10 +150,9 @@ def _read_body(obj):
 
 
 def _http_call(the_url, method, authorization, **kw):
-    '''
+    """
     send an http request and return a json object if no error occurred.
-    '''
-    params = None
+    """
     boundary = None
     if method == _HTTP_UPLOAD:
         params, boundary = _encode_multipart(**kw)
@@ -165,21 +162,21 @@ def _http_call(the_url, method, authorization, **kw):
             # fix sina remind api:
             the_url = the_url.replace('https://api.', 'https://rm.api.')
     http_url = '%s?%s' % (the_url, params) if method == _HTTP_GET else the_url
-    http_body = None if method == _HTTP_GET else params
-    req = urllib2.Request(http_url, data=http_body)
+    http_body = None if method == _HTTP_GET else params.encode()
+    req = Request(http_url, data=http_body)
     req.add_header('Accept-Encoding', 'gzip')
     if authorization:
         req.add_header('Authorization', 'OAuth2 %s' % authorization)
     if boundary:
         req.add_header('Content-Type', 'multipart/form-data; boundary=%s' % boundary)
     try:
-        resp = urllib2.urlopen(req, timeout=5)
+        resp = urlopen(req, timeout=5)
         body = _read_body(resp)
         r = _parse_json(body)
         if hasattr(r, 'error_code'):
             raise APIError(r.error_code, r.get('error', ''), r.get('request', ''))
         return r
-    except urllib2.HTTPError as e:
+    except HTTPError as e:
         try:
             r = _parse_json(_read_body(e))
         except:
@@ -204,9 +201,9 @@ class HttpObject(object):
 
 
 class APIClient(object):
-    '''
+    """
     API client using synchronized invocation.
-    '''
+    """
     def __init__(self, app_key, app_secret, redirect_uri=None, response_type='code', domain='api.weibo.com', version='2'):
         self.client_id = str(app_key)
         self.client_secret = str(app_secret)
@@ -221,13 +218,12 @@ class APIClient(object):
         self.upload = HttpObject(self, _HTTP_UPLOAD)
 
     def parse_signed_request(self, signed_request):
-        '''
+        """
         parse signed request when using in-site app.
-
         Returns:
             dict object like { 'uid': 12345, 'access_token': 'ABC123XYZ', 'expires': unix-timestamp },
             or None if parse failed.
-        '''
+        """
 
         def _b64_normalize(s):
             appendix = '=' * (4 - len(s) % 4)
@@ -240,7 +236,7 @@ class APIClient(object):
         data = _parse_json(base64.b64decode(_b64_normalize(enc_payload)))
         if data['algorithm'] != u'HMAC-SHA256':
             return None
-        expected_sig = hmac.new(self.client_secret, enc_payload, hashlib.sha256).digest()
+        expected_sig = hmac.new(self.client_secret.encode(), enc_payload, hashlib.sha256).digest()
         if expected_sig == sig:
             data.user_id = data.uid = data.get('user_id', None)
             data.access_token = data.get('oauth_token', None)
@@ -255,9 +251,9 @@ class APIClient(object):
         self.expires = float(expires)
 
     def get_authorize_url(self, redirect_uri=None, **kw):
-        '''
+        """
         return the authorization url that the user should be redirected to.
-        '''
+        """
         redirect = redirect_uri if redirect_uri else self.redirect_uri
         if not redirect:
             raise APIError('21305', 'Parameter absent: redirect_uri', 'OAuth2 request')
@@ -268,9 +264,9 @@ class APIClient(object):
                                            redirect_uri=redirect, **kw))
 
     def _parse_access_token(self, r):
-        '''
+        """
         new:return access token as a JsonDict: {"access_token":"your-access-token","expires_in":12345678,"uid":1234}, expires_in is represented using standard unix-epoch-time
-        '''
+        """
         current = int(time.time())
         expires = r.expires_in + current
         remind_in = r.get('remind_in', None)
@@ -308,6 +304,7 @@ class APIClient(object):
         if '__' in attr:
             return getattr(self.get, attr)
         return _Callable(self, attr)
+
 
 _METHOD_MAP = {
     'GET': _HTTP_GET,
@@ -353,6 +350,7 @@ class _Callable(object):
         return '_Callable (%s)' % self._name
 
     __repr__ = __str__
+
 
 if __name__ == '__main__':
     import doctest
